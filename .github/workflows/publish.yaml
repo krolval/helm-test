@@ -1,11 +1,16 @@
 # Triggered manually using as input the release e.g. v0.0.1
 name: Publish Chart Helm
 on:
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: The release e.g. v0.0.1
-        required: true
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'deploy/helm/**'
+      - 'deploy/kubernetes/**'
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # manually it will get the latest tag to publish the helm chart
 env:
   HELM_REP: helm-charts
   GH_OWNER: krolval
@@ -14,7 +19,7 @@ env:
   KIND_VERSION: "v0.12.0"
   KIND_IMAGE: "kindest/node:v1.23.4@sha256:0e34f0d0fd448aa2f2819cfd74e99fe5793a6e4938b328f657c8e3f81ee0dfb9"
 jobs:
-  publish:
+  test-chart:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -26,6 +31,21 @@ jobs:
         with:
           version: ${{ env.KIND_VERSION }}
           image: ${{ env.KIND_IMAGE }}
+      - name: Install Helm
+        uses: azure/setup-helm@v2.1
+        with:
+          version: v3.6.0
+
+  publish-chart:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs:
+      - test-chart
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748
+        with:
+          fetch-depth: 0
       - name: Install Helm
         uses: azure/setup-helm@v2.1
         with:
