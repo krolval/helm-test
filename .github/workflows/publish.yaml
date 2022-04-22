@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'deploy/helm/**'
+      - 'demo/**'
       - 'deploy/kubernetes/**'
   push:
     tags:
